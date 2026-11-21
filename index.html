@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ondea Finance — Gestion des dépenses et flux financiers</title>
+  <meta name="description" content="Ondea Finance : logiciel autonome de gestion des dépenses, recettes, factures, budgets et trésorerie pour TPE/PME. Fonctionne 100 % en local.">
+  <meta name="theme-color" content="#090B0F">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23F2D68D'/%3E%3Cstop offset='1' stop-color='%23B8901F'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M14 40c6-10 12-10 18 0s12 10 18 0' stroke='%2317120A' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cpath d='M14 26c6-10 12-10 18 0s12 10 18 0' stroke='%2317120A' stroke-width='5' fill='none' stroke-linecap='round' opacity='.55'/%3E%3C/svg%3E">
+  <script>
+    /* Application du thème et de la taille de texte avant le rendu (évite le flash) */
+    (function () {
+      try {
+        var s = JSON.parse(localStorage.getItem('ondea-finance:settings') || '{}');
+        var t = s.theme || (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', t);
+        if (s.fontScale) document.documentElement.style.setProperty('--scale', s.fontScale / 100);
+      } catch (e) { /* stockage indisponible : valeurs par défaut */ }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/app.css">
+  <!-- Ajout v1.1 : connexion & identité visuelle -->
+  <link rel="stylesheet" href="css/auth.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu principal</a>
+
+  <div id="boot" class="loader" role="status" aria-live="polite">
+    <div>
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 15c3-5 6-5 9 0s6 5 9 0"/><path d="M3 9c3-5 6-5 9 0s6 5 9 0" opacity=".55"/></svg>
+      </div>
+    </div>
+    <p>Chargement d'Ondea Finance…</p>
+    <noscript><p>Ondea Finance nécessite JavaScript pour fonctionner.</p></noscript>
+  </div>
+
+  <div class="app hidden" id="app">
+    <aside class="sidebar" id="sidebar" aria-label="Navigation principale">
+      <a class="brand" href="#tableau-de-bord" aria-label="Ondea Finance — tableau de bord">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M3 15c3-5 6-5 9 0s6 5 9 0"/><path d="M3 9c3-5 6-5 9 0s6 5 9 0" opacity=".55"/></svg>
+        </span>
+        <span class="brand-name">Ondea Finance<small>Pilotage financier</small></span>
+      </a>
+      <nav class="nav" id="nav"></nav>
+      <div class="sidebar-foot">
+        <a class="storage-mini" href="#coffre-fort" id="storageMini" aria-label="Espace de stockage personnel">
+          <div class="row"><span>Espace de stockage</span><span id="storageMiniPct" class="mono">—</span></div>
+          <div class="progress"><span id="storageMiniBar"></span></div>
+          <div class="row" style="margin:.45rem 0 0"><span id="storageMiniTxt" class="small">—</span></div>
+        </a>
+      </div>
+    </aside>
+    <div class="scrim" id="scrim"></div>
+
+    <div class="shell">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false" data-icon="menu"></button>
+        <div class="search" role="search">
+          <label for="globalSearch" class="sr-only">Recherche globale</label>
+          <span data-icon="search" aria-hidden="true"></span>
+          <input id="globalSearch" type="search" placeholder="Rechercher une opération, un tiers, une facture…" autocomplete="off" aria-controls="searchResults" aria-expanded="false" aria-autocomplete="list">
+          <kbd aria-hidden="true">Ctrl K</kbd>
+          <div class="search-results" id="searchResults" role="listbox" aria-label="Résultats de recherche"></div>
+        </div>
+        <div class="topbar-actions">
+          <div class="font-ctrl" role="group" aria-label="Taille du texte">
+            <button type="button" id="fontDown" aria-label="Diminuer la taille du texte">A−</button>
+            <output id="fontVal" aria-live="polite">100 %</output>
+            <button type="button" id="fontUp" aria-label="Agrandir la taille du texte">A+</button>
+          </div>
+          <button class="icon-btn font-mobile" id="fontCycle" aria-label="Changer la taille du texte" title="Taille du texte">Aa</button>
+          <button class="icon-btn" id="themeBtn" aria-label="Basculer le mode clair / sombre" data-icon="moon"></button>
+          <button class="btn btn-primary" id="quickAdd" type="button" aria-label="Nouvelle opération"><span data-icon="plus" aria-hidden="true"></span><span class="lbl">Nouvelle opération</span></button>
+        </div>
+      </header>
+      <main id="main" tabindex="-1"></main>
+    </div>
+  </div>
+
+  <div id="modalRoot"></div>
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
+  <div class="tooltip" id="tooltip" role="tooltip"></div>
+
+  <!-- Configuration : choisir le pilote de données (local ou API PHP) -->
+  <script src="js/config.js"></script>
+  <!-- Noyau -->
+  <script src="js/core/utils.js"></script>
+  <script src="js/core/drivers.js"></script>
+  <script src="js/core/store.js"></script>
+  <script src="js/core/files.js"></script>
+  <script src="js/core/finance.js"></script>
+  <script src="js/core/seed.js"></script>
+  <!-- Interface -->
+  <script src="js/ui/icons.js"></script>
+  <script src="js/ui/ui.js"></script>
+  <script src="js/ui/charts.js"></script>
+  <script src="js/ui/table.js"></script>
+  <script src="js/ui/forms.js"></script>
+  <!-- Vues -->
+  <script src="js/views/dashboard.js"></script>
+  <script src="js/views/operations.js"></script>
+  <script src="js/views/invoices.js"></script>
+  <script src="js/views/schedules.js"></script>
+  <script src="js/views/budgets.js"></script>
+  <script src="js/views/treasury.js"></script>
+  <script src="js/views/thirdparties.js"></script>
+  <script src="js/views/referentials.js"></script>
+  <script src="js/views/vault.js"></script>
+  <script src="js/views/reports.js"></script>
+  <script src="js/views/settings.js"></script>
+  <!-- Ajout v1.1 : identité visuelle, connexion, section Sécurité -->
+  <script src="js/ui/branding.js"></script>
+  <script src="js/core/auth.js"></script>
+  <script src="js/views/security.js"></script>
+  <!-- Application -->
+  <script src="js/app.js"></script>
+</body>
+</html>
